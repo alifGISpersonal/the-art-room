@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Met Museum Gallery SPA</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            color-scheme: dark;
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #141312;
+            color: #f7f4ef;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #141312;
+        }
+
+        header {
+            min-height: 82px;
+            padding: 16px clamp(20px, 5vw, 72px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 24px;
+            background: rgba(20, 19, 18, 0.82);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+            backdrop-filter: blur(18px);
+            z-index: 2;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            flex: 0 0 auto;
+            filter: brightness(0) saturate(100%) invert(81%) sepia(25%) saturate(523%) hue-rotate(354deg) brightness(93%) contrast(88%);
+        }
+
+        .brand h1 {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+        }
+
+        .brand p {
+            margin-top: 3px;
+            color: #9f9990;
+            font-size: 11px;
+            letter-spacing: 0.11em;
+            text-transform: uppercase;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        select, button {
+            min-height: 42px;
+            padding: 0 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background-color: rgba(30, 29, 27, 0.9);
+            color: #f7f4ef;
+            font: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s, transform 0.2s;
+        }
+
+        select {
+            max-width: min(42vw, 300px);
+        }
+
+        select:focus-visible, button:focus-visible {
+            outline: 2px solid #e7be80;
+            outline-offset: 3px;
+        }
+
+        button:hover {
+            border-color: rgba(231, 190, 128, 0.65);
+            background-color: #39342e;
+            transform: translateY(-1px);
+        }
+
+        button {
+            border-color: #d8b77f;
+            background: #d8b77f;
+            color: #211c15;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #e7c995;
+            color: #211c15;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        main {
+            flex: 1;
+            min-height: calc(100vh - 82px);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            isolation: isolate;
+            overflow: hidden;
+            padding: clamp(24px, 5vw, 64px);
+            background: radial-gradient(ellipse at 50% 35%, #34302a 0%, #1c1a17 58%, #141312 100%);
+        }
+
+        .gallery-backdrop {
+            position: absolute;
+            z-index: -2;
+            inset: -32px;
+            background-position: center;
+            background-size: cover;
+            filter: blur(42px) saturate(0.8);
+            opacity: 0;
+            transform: scale(1.08);
+            transition: opacity 1s ease;
+        }
+
+        .gallery-backdrop.is-visible {
+            opacity: 0.46;
+        }
+
+        main::before {
+            content: "";
+            position: absolute;
+            z-index: -1;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(20, 19, 18, 0.68), rgba(20, 19, 18, 0.3) 48%, rgba(20, 19, 18, 0.72));
+            pointer-events: none;
+        }
+
+        #painting {
+            max-width: 100%;
+            max-height: calc(100vh - 190px);
+            object-fit: contain;
+            border: 8px solid rgba(255, 255, 255, 0.94);
+            border-radius: 3px;
+            box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48), 0 4px 16px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        #info-box {
+            position: absolute;
+            bottom: clamp(20px, 4vw, 48px);
+            right: clamp(20px, 4vw, 48px);
+            background: rgba(24, 23, 21, 0.76);
+            padding: 18px 20px;
+            border-radius: 12px;
+            max-width: min(360px, calc(100vw - 40px));
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            backdrop-filter: blur(18px);
+            display: none;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+        }
+
+        #info-box h2 {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 18px;
+            font-weight: 500;
+            line-height: 1.3;
+            margin-bottom: 8px;
+            color: #fffaf1;
+        }
+
+        #info-box p {
+            font-size: 12px;
+            line-height: 1.55;
+            color: #d1cbc2;
+            margin-bottom: 2px;
+        }
+
+        #info-box em {
+            color: #e7be80;
+            font-style: normal;
+        }
+
+        #status {
+            max-width: 440px;
+            padding: 18px 24px;
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            border-radius: 12px;
+            background: rgba(24, 23, 21, 0.66);
+            color: #e2ddd5;
+            font-size: 15px;
+            line-height: 1.5;
+            text-align: center;
+            backdrop-filter: blur(12px);
+        }
+
+        @media (max-width: 620px) {
+            header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 16px;
+                padding: 18px 20px;
+            }
+
+            .controls {
+                width: 100%;
+            }
+
+            select {
+                flex: 1;
+                min-width: 0;
+                max-width: none;
+            }
+
+            main {
+                min-height: calc(100vh - 138px);
+                padding: 24px 18px 160px;
+            }
+
+            #painting {
+                max-height: calc(100vh - 250px);
+            }
+
+            #info-box {
+                right: 18px;
+                bottom: 18px;
+                left: 18px;
+                max-width: none;
+                padding: 14px 16px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                scroll-behavior: auto !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <img class="brand-icon" src="./favicon.svg" alt="" aria-hidden="true">
+            <div>
+                <h1>The Art Room</h1>
+                <p>A daily window into the Met</p>
+            </div>
+        </div>
+        <div class="controls">
+            <select id="department-select" aria-label="Choose an art department">
+                <option value="">Loading departments...</option>
+            </select>
+            <button id="fetch-btn" disabled>Discover art</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="gallery-backdrop" id="gallery-backdrop" aria-hidden="true"></div>
+        <div id="status">Loading application...</div>
+        <img id="painting" alt="Met Painting">
+        
+        <!-- Info Card Box on bottom right -->
+        <div id="info-box">
+            <h2 id="art-title">Title</h2>
+            <p id="art-artist">Artist</p>
+            <p id="art-date">Date</p>
+            <p id="art-medium">Medium</p>
+            <p><em id="art-dept">Department</em></p>
+        </div>
+    </main>
+
+    <script>
+        const deptSelect = document.getElementById('department-select');
+        const fetchBtn = document.getElementById('fetch-btn');
+        const statusDiv = document.getElementById('status');
+        const paintingImg = document.getElementById('painting');
+        const infoBox = document.getElementById('info-box');
+        const galleryBackdrop = document.getElementById('gallery-backdrop');
+
+        const artTitle = document.getElementById('art-title');
+        const artArtist = document.getElementById('art-artist');
+        const artDate = document.getElementById('art-date');
+        const artMedium = document.getElementById('art-medium');
+        const artDept = document.getElementById('art-dept');
+
+        const BASE_URL = 'https://collectionapi.metmuseum.org/public/collection/v1';
+
+        // 1. Initialize App & Fetch Departments
+        async function init() {
+            try {
+                updateStatus('Fetching departments...');
+                const res = await fetch(`${BASE_URL}/departments`);
+                const data = await res.json();
+                
+                deptSelect.innerHTML = ''; // Clear loading option
+                
+                data.departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.departmentId;
+                    option.textContent = dept.displayName;
+                    deptSelect.appendChild(option);
+                });
+
+                // Pick a random department index to start with
+                const randomDeptIdx = Math.floor(Math.random() * data.departments.length);
+                deptSelect.selectedIndex = randomDeptIdx;
+
+                fetchBtn.disabled = false;
+                
+                // Fetch the initial random painting
+                getRandomPainting();
+            } catch (error) {
+                updateStatus('Failed to load departments. Please refresh.');
+                console.error(error);
+            }
+        }
+
+        // 2. Fetch a random object ID from the selected department
+        async function getRandomPainting() {
+            const deptId = deptSelect.value;
+            if (!deptId) return;
+
+            hideArtwork();
+            updateStatus('Searching for artwork...');
+            fetchBtn.disabled = true;
+
+            try {
+                // Fetch all object IDs belonging to the chosen department
+                const res = await fetch(`${BASE_URL}/objects?departmentIds=${deptId}`);
+                const data = await res.json();
+
+                if (!data.objectIDs || data.objectIDs.length === 0) {
+                    updateStatus('No items found in this department. Try another.');
+                    fetchBtn.disabled = false;
+                    return;
+                }
+
+                // Attempt to find a valid painting image (loops up to 15 times to avoid infinite hangs)
+                let attempts = 0;
+                let foundImage = false;
+
+                while (!foundImage && attempts < 15) {
+                    attempts++;
+                    updateStatus(`Searching... (Attempt ${attempts})`);
+                    
+                    const randomId = data.objectIDs[Math.floor(Math.random() * data.objectIDs.length)];
+                    foundImage = await fetchArtworkDetails(randomId);
+                }
+
+                if (!foundImage) {
+                    updateStatus('Could not find a public domain image after multiple tries. Click Next.');
+                }
+            } catch (error) {
+                updateStatus('Error fetching department items.');
+                console.error(error);
+            } finally {
+                fetchBtn.disabled = false;
+            }
+        }
+
+        // 3. Fetch specific artwork details and verify primaryImage
+        async function fetchArtworkDetails(objectId) {
+            try {
+                const res = await fetch(`${BASE_URL}/objects/${objectId}`);
+                const art = await res.json();
+
+                // Ensure it has a valid primary image asset available
+                if (art && art.primaryImage) {
+                    displayArtwork(art);
+                    return true;
+                }
+                return false;
+            } catch (e) {
+                console.warn(`Skipping Object ID ${objectId} due to fetch error.`);
+                return false;
+            }
+        }
+
+        // 4. Update the Viewport with Image and Metadata
+        function displayArtwork(art) {
+            statusDiv.style.display = 'none';
+            
+            // Map Metadata values
+            artTitle.textContent = art.title || 'Untitled';
+            artArtist.textContent = art.artistDisplayName ? `By: ${art.artistDisplayName}` : 'Unknown Artist';
+            artDate.textContent = art.objectDate ? `Date: ${art.objectDate}` : '';
+            artMedium.textContent = art.medium ? `Medium: ${art.medium}` : 'Medium: Not recorded';
+            artDept.textContent = art.department || '';
+            paintingImg.alt = art.title || 'Met Museum artwork';
+
+            // Handle image load
+            paintingImg.src = art.primaryImage;
+            paintingImg.style.display = 'block';
+            infoBox.style.display = 'block';
+            galleryBackdrop.classList.remove('is-visible');
+            galleryBackdrop.style.backgroundImage = `url("${art.primaryImage}")`;
+            requestAnimationFrame(() => galleryBackdrop.classList.add('is-visible'));
+        }
+
+        // Helper Layout functions
+        function hideArtwork() {
+            paintingImg.style.display = 'none';
+            infoBox.style.display = 'none';
+            paintingImg.src = '';
+            galleryBackdrop.classList.remove('is-visible');
+        }
+
+        function updateStatus(message) {
+            statusDiv.style.display = 'block';
+            statusDiv.textContent = message;
+        }
+
+        // Event Listeners
+        fetchBtn.addEventListener('click', getRandomPainting);
+        deptSelect.addEventListener('change', getRandomPainting);
+
+        // Start Application
+        init();
+    </script>
+</body>
+</html>
